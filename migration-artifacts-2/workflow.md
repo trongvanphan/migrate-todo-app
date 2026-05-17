@@ -204,7 +204,7 @@ Per domain, serially:
 
 ## 6. Adapting TECH_STACK
 
-Same JSON format as v1 (see `migration-artifacts/workflow.md` §6) plus large-app additions:
+Declare a single `tech-stack.json` at the repo root (or pass via `{{TECH_STACK}}`) capturing the target platform. Large-app fields:
 
 ```json
 {

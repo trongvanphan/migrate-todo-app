@@ -17,6 +17,12 @@ Gate 3. Snapshot legacy data to cold storage, then disconnect writes. Pre-condit
 
 ---
 
+## Context Budget
+
+See `sub-agents/_shared/context-budget-rules.md`. Read only the inputs explicitly listed in Parameters; do not load full discovery dumps.
+
+---
+
 ## Procedure
 
 ### 1. Plan

@@ -16,6 +16,12 @@ Gate 2. Confirm no other code in the repo imports / calls into legacy `{{DOMAIN}
 
 ---
 
+## Context Budget
+
+See `sub-agents/_shared/context-budget-rules.md`. Read only the inputs explicitly listed in Parameters; do not load full discovery dumps.
+
+---
+
 ## Procedure
 
 1. Locate legacy `{{DOMAIN}}` source root (from `domains/{{DOMAIN}}/charter.md`).

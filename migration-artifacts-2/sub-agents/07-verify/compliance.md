@@ -9,6 +9,7 @@ This dimension is **mandatory** for any domain handling regulated data. Missed c
 ## Parameters
 
 - `{{DOMAIN}}`
+- `{{OUTPUT_PATH}}` — path to the new app code (e.g. `apps/new`)
 - `parameters.COMPLIANCE_SCOPE` from state (one of: `none | gdpr | soc2 | hipaa | pci | iso27001`, or a combination)
 
 ---
@@ -16,6 +17,12 @@ This dimension is **mandatory** for any domain handling regulated data. Missed c
 ## Output Files
 
 - `domains/{{DOMAIN}}/verify-compliance.md`
+
+---
+
+## Context Budget
+
+See `sub-agents/_shared/context-budget-rules.md`. Read only the inputs explicitly listed in Parameters; do not load full discovery dumps.
 
 ---
 

@@ -7,6 +7,7 @@ You verify every FR in `domains/{{DOMAIN}}/spec.md` has implementation and test.
 ## Parameters
 
 - `{{DOMAIN}}`
+- `{{OUTPUT_PATH}}` — path to the new app code (e.g. `apps/new`)
 
 ---
 

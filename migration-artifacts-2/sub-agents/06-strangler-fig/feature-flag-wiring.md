@@ -22,6 +22,12 @@ Feature flags are the **fast-rollback** mechanism. They must work even if the ro
 
 ---
 
+## Context Budget
+
+See `sub-agents/_shared/context-budget-rules.md`. Read only the inputs explicitly listed in Parameters; do not load full discovery dumps.
+
+---
+
 ## Flag Schema
 
 One **routing flag** per contract endpoint:

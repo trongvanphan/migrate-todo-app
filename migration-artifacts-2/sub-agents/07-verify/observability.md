@@ -9,12 +9,19 @@ A new system without observability is an outage waiting to be noticed by custome
 ## Parameters
 
 - `{{DOMAIN}}`
+- `{{OUTPUT_PATH}}` — path to the new app code (e.g. `apps/new`)
 
 ---
 
 ## Output Files
 
 - `domains/{{DOMAIN}}/verify-observability.md`
+
+---
+
+## Context Budget
+
+See `sub-agents/_shared/context-budget-rules.md`. Read only the inputs explicitly listed in Parameters; do not load full discovery dumps.
 
 ---
 

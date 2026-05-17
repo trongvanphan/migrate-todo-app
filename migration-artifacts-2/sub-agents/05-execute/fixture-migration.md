@@ -7,6 +7,8 @@ You migrate seed data, fixtures, and anonymized production samples for `{{DOMAIN
 ## Parameters
 
 - `{{DOMAIN}}`
+- `{{LEGACY_PATH}}` — path to the legacy app source
+- `{{OUTPUT_PATH}}` — path to the new app code
 
 ---
 

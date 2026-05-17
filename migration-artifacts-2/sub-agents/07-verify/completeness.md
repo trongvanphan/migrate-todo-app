@@ -16,6 +16,12 @@ You verify every file in `design.md` and every contract in `_contracts.yaml` is 
 
 ---
 
+## Context Budget
+
+See `sub-agents/_shared/context-budget-rules.md`. Read only the inputs explicitly listed in Parameters; do not load full discovery dumps.
+
+---
+
 ## Procedure
 
 1. Extract every file path from `domains/{{DOMAIN}}/design.md` "Directory structure" + `tasks.md` "Files to create".

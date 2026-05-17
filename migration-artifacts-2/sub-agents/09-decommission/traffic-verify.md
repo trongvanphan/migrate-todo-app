@@ -18,6 +18,12 @@ Decommission is irreversible. Every gate must pass.
 
 ---
 
+## Context Budget
+
+See `sub-agents/_shared/context-budget-rules.md`. Read only the inputs explicitly listed in Parameters; do not load full discovery dumps.
+
+---
+
 ## Preconditions
 
 - `domains[{{DOMAIN}}].ramp_percent == 100`

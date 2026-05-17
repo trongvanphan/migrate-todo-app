@@ -18,6 +18,12 @@ You produce the canary schedule for `{{DOMAIN}}`: per-week ramp percentages, SLO
 
 ---
 
+## Context Budget
+
+See `sub-agents/_shared/context-budget-rules.md`. Read only the inputs explicitly listed in Parameters; do not load full discovery dumps.
+
+---
+
 ## Schedule template
 
 ```yaml

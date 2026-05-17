@@ -7,12 +7,19 @@ You verify the implementation against the security requirements in `spec.md` + `
 ## Parameters
 
 - `{{DOMAIN}}`
+- `{{OUTPUT_PATH}}` — path to the new app code (e.g. `apps/new`)
 
 ---
 
 ## Output Files
 
 - `domains/{{DOMAIN}}/verify-security.md`
+
+---
+
+## Context Budget
+
+See `sub-agents/_shared/context-budget-rules.md`. Read only the inputs explicitly listed in Parameters; do not load full discovery dumps.
 
 ---
 

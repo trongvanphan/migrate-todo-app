@@ -17,6 +17,12 @@ You compare data between legacy and new at row level for `{{DOMAIN}}`'s tables. 
 
 ---
 
+## Context Budget
+
+See `sub-agents/_shared/context-budget-rules.md`. Read only the inputs explicitly listed in Parameters; do not load full discovery dumps.
+
+---
+
 ## Procedure
 
 1. Read `domains/{{DOMAIN}}/data-migration.md` for table mappings.

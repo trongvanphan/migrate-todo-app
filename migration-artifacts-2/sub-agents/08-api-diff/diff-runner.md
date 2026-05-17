@@ -17,6 +17,12 @@ You run the harness output through the equivalence rules and produce a diff repo
 
 ---
 
+## Context Budget
+
+See `sub-agents/_shared/context-budget-rules.md`. Read only the inputs explicitly listed in Parameters; do not load full discovery dumps.
+
+---
+
 ## Inputs
 
 - `domains/{{DOMAIN}}/api-diff/harness-output.jsonl` — output of harness run

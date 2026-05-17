@@ -16,6 +16,12 @@ You verify the migration does not break other domains or pre-existing functional
 
 ---
 
+## Context Budget
+
+See `sub-agents/_shared/context-budget-rules.md`. Read only the inputs explicitly listed in Parameters; do not load full discovery dumps.
+
+---
+
 ## Checks
 
 ```bash

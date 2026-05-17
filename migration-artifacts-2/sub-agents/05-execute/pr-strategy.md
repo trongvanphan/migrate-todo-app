@@ -16,6 +16,12 @@ You produce the per-domain branching and PR policy document. Runs ONCE per domai
 
 ---
 
+## Context Budget
+
+See `sub-agents/_shared/context-budget-rules.md`. Read only the inputs explicitly listed in Parameters; do not load full discovery dumps.
+
+---
+
 ## Content
 
 ```markdown

@@ -18,6 +18,12 @@ Without this config, every diff is flagged as a difference and the signal is unu
 
 ---
 
+## Context Budget
+
+See `sub-agents/_shared/context-budget-rules.md`. Read only the inputs explicitly listed in Parameters; do not load full discovery dumps.
+
+---
+
 ## Schema
 
 ```yaml

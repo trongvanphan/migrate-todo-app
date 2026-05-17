@@ -18,6 +18,12 @@ You load-test the new implementation against the legacy baseline. Fail if regres
 
 ---
 
+## Context Budget
+
+See `sub-agents/_shared/context-budget-rules.md`. Read only the inputs explicitly listed in Parameters; do not load full discovery dumps.
+
+---
+
 ## Procedure
 
 ### 1. Capture or read baseline

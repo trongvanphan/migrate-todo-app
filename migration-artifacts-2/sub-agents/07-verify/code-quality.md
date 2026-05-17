@@ -7,12 +7,19 @@ You verify code in `{{OUTPUT_PATH}}/{{DOMAIN}}` is clean: typechecks, lints, has
 ## Parameters
 
 - `{{DOMAIN}}`
+- `{{OUTPUT_PATH}}` — path to the new app code (e.g. `apps/new`)
 
 ---
 
 ## Output Files
 
 - `domains/{{DOMAIN}}/verify-code-quality.md`
+
+---
+
+## Context Budget
+
+See `sub-agents/_shared/context-budget-rules.md`. Read only the inputs explicitly listed in Parameters; do not load full discovery dumps.
 
 ---
 

@@ -18,6 +18,12 @@ Gate 4 (final). Remove legacy code in stages. Each stage is its own PR with expl
 
 ---
 
+## Context Budget
+
+See `sub-agents/_shared/context-budget-rules.md`. Read only the inputs explicitly listed in Parameters; do not load full discovery dumps.
+
+---
+
 ## Preconditions
 
 All three earlier gates passed (state shows `decommission_gate_1..3 == "pass"`).
