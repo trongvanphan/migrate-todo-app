@@ -1,0 +1,142 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://migration-artifacts-2/migration-state.schema.json",
+  "title": "Migration State",
+  "description": "Canonical state file for a large-app SDS migration. Read at the start of every sub-agent. Updated atomically via read → modify → write-tmp → rename.",
+  "type": "object",
+  "required": ["version", "parameters", "phases_complete", "domains"],
+  "properties": {
+    "version": { "type": "string", "const": "2.0" },
+    "created_at": { "type": "string", "format": "date-time" },
+    "last_updated": { "type": "string", "format": "date-time" },
+    "parameters": {
+      "type": "object",
+      "required": ["LEGACY_PATH", "OUTPUT_PATH", "APP_SIZE_LOC", "TECH_STACK"],
+      "properties": {
+        "LEGACY_PATH": { "type": "string" },
+        "OUTPUT_PATH": { "type": "string" },
+        "APP_SIZE_LOC": { "type": "integer", "minimum": 0 },
+        "TIMELINE_MONTHS": { "type": "integer" },
+        "TEAM_SIZE": { "type": "integer" },
+        "TECH_STACK": { "type": "object" },
+        "FEATURE_FLAG_SYS": { "type": "string", "enum": ["LaunchDarkly", "Unleash", "Statsig", "custom"] },
+        "ROUTING_LAYER": { "type": "string", "enum": ["nginx", "alb", "cloudflare-worker", "envoy", "other"] },
+        "COMPLIANCE_SCOPE": {
+          "type": "array",
+          "items": { "type": "string", "enum": ["none", "gdpr", "soc2", "hipaa", "pci", "iso27001"] }
+        }
+      }
+    },
+    "phases_complete": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["discovery", "decompose", "spec", "design", "tasks", "execute", "strangler-fig", "verify", "api-diff", "decommission"]
+      }
+    },
+    "domains": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "status"],
+        "properties": {
+          "name": { "type": "string" },
+          "status": {
+            "type": "string",
+            "enum": ["pending", "spec", "design", "tasks", "execute", "strangler", "verify", "api-diff", "canary", "done", "rolled_back", "decommissioned"]
+          },
+          "loc": { "type": "integer" },
+          "feature_split": { "type": "boolean", "description": "true if domain was split into features via feature-spec.md" },
+          "features": { "type": "array", "items": { "type": "string" } },
+          "dependencies": { "type": "array", "items": { "type": "string" } },
+          "owner_team": { "type": "string" },
+          "owner_engineers": { "type": "array", "items": { "type": "string" } },
+          "branch": { "type": "string", "description": "migration/{domain} integration branch" },
+          "ramp_percent": { "type": "integer", "minimum": 0, "maximum": 100 },
+          "ramp_history": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "percent": { "type": "integer" },
+                "at": { "type": "string", "format": "date-time" },
+                "slo_status": { "type": "string", "enum": ["pass", "fail", "manual_hold"] }
+              }
+            }
+          },
+          "last_updated": { "type": "string", "format": "date-time" },
+          "blockers": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "shared_kernel": {
+      "type": "array",
+      "description": "Files used by multiple domains. Decision = extract|duplicate|split.",
+      "items": {
+        "type": "object",
+        "required": ["path", "consumers", "decision"],
+        "properties": {
+          "path": { "type": "string" },
+          "consumers": { "type": "array", "items": { "type": "string" } },
+          "decision": { "type": "string", "enum": ["extract", "duplicate", "split", "pending"] },
+          "target_library": { "type": "string" }
+        }
+      }
+    },
+    "contracts": {
+      "type": "array",
+      "description": "Inbound/outbound contracts between domains.",
+      "items": {
+        "type": "object",
+        "required": ["name", "version", "owner_domain", "kind"],
+        "properties": {
+          "name": { "type": "string" },
+          "version": { "type": "string" },
+          "kind": { "type": "string", "enum": ["rest", "grpc", "graphql", "event", "rpc"] },
+          "owner_domain": { "type": "string" },
+          "consumers": { "type": "array", "items": { "type": "string" } },
+          "schema_path": { "type": "string" },
+          "sla": {
+            "type": "object",
+            "properties": {
+              "p95_ms": { "type": "integer" },
+              "availability": { "type": "number" }
+            }
+          },
+          "deprecation_date": { "type": ["string", "null"], "format": "date" }
+        }
+      }
+    },
+    "risks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "severity", "description"],
+        "properties": {
+          "id": { "type": "string" },
+          "severity": { "type": "string", "enum": ["critical", "high", "medium", "low"] },
+          "description": { "type": "string" },
+          "domain": { "type": "string" },
+          "owner": { "type": "string" },
+          "mitigation": { "type": "string" },
+          "status": { "type": "string", "enum": ["open", "mitigated", "accepted", "closed"] }
+        }
+      }
+    },
+    "rollback_history": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["at", "domain", "reason"],
+        "properties": {
+          "at": { "type": "string", "format": "date-time" },
+          "domain": { "type": "string" },
+          "from_ramp": { "type": "integer" },
+          "to_ramp": { "type": "integer" },
+          "reason": { "type": "string" },
+          "triggered_by": { "type": "string", "enum": ["slo_breach", "manual", "verify_critical", "diff_threshold"] }
+        }
+      }
+    }
+  }
+}

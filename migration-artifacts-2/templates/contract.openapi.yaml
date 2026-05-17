@@ -1,0 +1,127 @@
+openapi: 3.1.0
+info:
+  title: "{{CONTRACT_NAME}}"
+  version: "{{MAJOR}}.{{MINOR}}"
+  description: |
+    Contract owned by domain {{DOMAIN}}.
+
+    Versioning policy:
+      - Additive changes (new optional field, new endpoint): bump minor.
+      - Breaking changes (remove field, change type, change required-ness): bump major
+        AND create a new versioned URL path (/v{N}/...). Never break in place.
+      - Deprecations: set x-deprecation-date in the registry and notify consumers
+        90 days in advance.
+
+  x-owner-domain: "{{DOMAIN}}"
+  x-owner-team: "{{TEAM}}"
+  x-sla:
+    p95_ms: {{P95_MS}}
+    p99_ms: {{P99_MS}}
+    availability: {{AVAILABILITY}}
+  x-deprecation-date: null
+
+servers:
+  - url: https://{{HOSTNAME}}/v{{MAJOR}}
+    description: production
+
+security:
+  - bearerAuth: []
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code: { type: string, example: "validation_failed" }
+        message: { type: string }
+        request_id: { type: string }
+
+    # Domain types go here
+    {{DOMAIN_TYPE_NAME}}:
+      type: object
+      required: [id]
+      properties:
+        id: { type: string, format: uuid }
+        # ...
+
+  responses:
+    BadRequest:
+      description: validation error
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    Unauthorized:
+      description: missing or invalid auth
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    Forbidden:
+      description: not authorized for this resource
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    NotFound:
+      description: resource not found
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    RateLimited:
+      description: too many requests
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    ServerError:
+      description: internal error (5xx)
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+
+paths:
+  /{{RESOURCE_PATH}}:
+    get:
+      operationId: "get{{RESOURCE_NAME}}"
+      summary: "Get a {{RESOURCE_NAME}}"
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: success
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/{{DOMAIN_TYPE_NAME}}" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+        "500": { $ref: "#/components/responses/ServerError" }
+
+    post:
+      operationId: "create{{RESOURCE_NAME}}"
+      summary: "Create a {{RESOURCE_NAME}}"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/{{DOMAIN_TYPE_NAME}}" }
+      responses:
+        "201":
+          description: created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/{{DOMAIN_TYPE_NAME}}" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+        "500": { $ref: "#/components/responses/ServerError" }
