@@ -24,6 +24,10 @@
         "COMPLIANCE_SCOPE": {
           "type": "array",
           "items": { "type": "string", "enum": ["none", "gdpr", "soc2", "hipaa", "pci", "iso27001"] }
+        },
+        "LIVE_TRAFFIC": {
+          "type": "boolean",
+          "description": "When false, Phases 06 (strangler-fig), 08 (api-diff), and 09 (decommission) are skipped. Greenfield rewrites use false."
         }
       }
     },
@@ -41,6 +45,11 @@
         "required": ["name", "status"],
         "properties": {
           "name": { "type": "string" },
+          "spec_slug": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]{0,63}$",
+            "description": "Slug used by the sds.* skills under spec-driven/<slug>/. Defaults to `name` if omitted. MUST match [a-z0-9-]+."
+          },
           "status": {
             "type": "string",
             "enum": ["pending", "spec", "design", "tasks", "execute", "strangler", "verify", "api-diff", "canary", "done", "rolled_back", "decommissioned"]
@@ -51,7 +60,7 @@
           "dependencies": { "type": "array", "items": { "type": "string" } },
           "owner_team": { "type": "string" },
           "owner_engineers": { "type": "array", "items": { "type": "string" } },
-          "branch": { "type": "string", "description": "migration/{domain} integration branch" },
+          "branch": { "type": "string", "description": "Integration branch — for sds-delegated execute, equals 'spec-driven/<spec_slug>/exec'." },
           "ramp_percent": { "type": "integer", "minimum": 0, "maximum": 100 },
           "ramp_history": {
             "type": "array",

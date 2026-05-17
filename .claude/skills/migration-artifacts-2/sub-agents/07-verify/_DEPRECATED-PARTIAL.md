@@ -1,0 +1,1 @@
+> PARTIAL: traceability, completeness, code-quality, test-quality, regression, security are now produced by /sds.verify. Only performance, observability, compliance, data-parity remain native — see ../../references/sds-delegation.md#phase-07

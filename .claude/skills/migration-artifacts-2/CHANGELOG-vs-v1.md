@@ -55,3 +55,36 @@ Why v1 was insufficient for large-app migrations, and what v2 changes.
 ## Coverage of `large-app-migration-strategy.md`
 
 v1 included `large-app-migration-strategy.md` as a conceptual doc but no executable artifacts for: strangler-fig routing, feature flags, API diff, canary ramps, decommission. v2 makes every concept in that doc into an executable sub-agent with templates.
+
+---
+
+## 2026-05 update — sds delegation
+
+The five phases that produce per-domain spec, design, tasks, code, and verify output are no longer implemented by this skill's own sub-agents. They now **delegate to the `sds.*` skill suite** installed alongside this skill.
+
+| Phase | Was | Now |
+|---|---|---|
+| 02 Spec | `sub-agents/02-spec/{domain-spec,feature-spec}.md` | `/sds.spec <slug> --from migration/domains/<slug>/legacy-context.md --draft` |
+| 03 Design | `sub-agents/03-design/{domain-design,contract-design,data-migration-design}.md` | `/sds.design <slug> --context migration/_constraints.md` |
+| 04 Tasks | `sub-agents/04-tasks/{domain-tasks,critical-path-analysis}.md` | `/sds.task <slug>` |
+| 05 Execute | `sub-agents/05-execute/{bundle-execute,fixture-migration,pr-strategy}.md` | `/sds.execute <slug> --parallelism N` |
+| 07 Verify | `sub-agents/07-verify/{traceability,completeness,code-quality,test-quality,regression,security}.md` | `/sds.verify <slug>` — the other four dimensions (performance, observability, compliance, data-parity) remain native |
+
+### What this skill still owns
+
+Phases 00 (discovery), 01 (decompose), 06 (strangler-fig), 08 (api-diff), 09 (decommission) plus `migration-state.json`, the scheduler, concurrency caps, and the four supplemental verify dimensions. The sds skills do not cover these.
+
+### Artifact path split
+
+Per-domain artifacts now live at `spec-driven/<slug>/` (sds-owned). Migration-level artifacts live at `migration/` and `migration-state.json` at the repo root. The two trees never overlap. The migration skill never writes under `spec-driven/<slug>/`.
+
+### Greenfield (`LIVE_TRAFFIC=false`) fast path
+
+New parameter `LIVE_TRAFFIC`. When `false`, Phases 06, 08, 09 are explicitly skipped. The sds-delegated phases always run regardless of size or traffic.
+
+### Why this changed
+
+Prior runs of `/migration-v2` produced per-domain artifacts that bypassed the structured spec/design/tasks/execute gates the `sds.*` skills enforce. The result: agent-drafted specs without user validation, designs without research findings, code without per-bundle review. Delegating to sds restores the mandatory interaction gates and validation passes that `migration-artifacts-2`'s own sub-agents never had.
+
+The superseded sub-agent directories (`02-spec`, `03-design`, `04-tasks`, `05-execute`) are retained on disk with a `_DEPRECATED.md` marker for reference; they are not invoked by the updated `SKILL.md`. `07-verify/` retains the four supplemental sub-agents.
+
