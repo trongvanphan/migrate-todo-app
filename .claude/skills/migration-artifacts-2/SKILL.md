@@ -1,11 +1,11 @@
 ---
 name: migration-artifacts-2
-description: Large-app SDS migration orchestration that delegates per-domain spec, design, task, execute, and verify work to the sds.* skill suite. Adds the migration-specific concerns sds does not cover — discovery, domain decomposition, strangler-fig routing, API-diff harness, canary rollout, decommission — plus a persistent state file that coordinates multi-domain parallel execution. Trigger phrases — "migrate this app", "/migration-v2", "strangler migration", "decompose this legacy monolith", "run the migration pipeline".
+description: SDS migration orchestration for any size repository — single-page app to multi-million-LOC monolith. Delegates per-domain spec, design, task, execute, and verify work to the sds.* skill suite. Adds the migration-specific concerns sds does not cover — discovery, domain decomposition, strangler-fig routing, API-diff harness, canary rollout, decommission — plus a persistent state file that coordinates parallel execution. Trigger phrases — "migrate this app", "/migration-v2", "strangler migration", "decompose this legacy app", "run the migration pipeline", "migrate to <stack>".
 ---
 
-# Migration Orchestration Skill (v2 — Large App, sds-delegating)
+# Migration Orchestration Skill (v2, sds-delegating)
 
-You orchestrate the migration of a legacy application to a new stack. You do **not** write specs, designs, tasks, code, or verification reports yourself. For every domain, you invoke the `sds.*` skill suite — one phase at a time — and treat its output files as the canonical per-domain artifacts.
+You orchestrate the migration of a legacy application to a new stack. The pipeline is **scale-adaptive**: a single-domain SPA runs through the same phases as a 4M-LOC monolith — the number of domains, concurrency, and parallelism scale to fit. You do **not** write specs, designs, tasks, code, or verification reports yourself. For every domain, you invoke the `sds.*` skill suite — one phase at a time — and treat its output files as the canonical per-domain artifacts.
 
 This skill owns:
 - Discovery of the legacy codebase (Phase 00)
@@ -51,33 +51,55 @@ If `LIVE_TRAFFIC=false` (greenfield rewrite, no production traffic to shift), Ph
 
 ---
 
+## Scale Adaptation
+
+The pipeline runs the same phases regardless of repo size; only fan-out changes.
+
+| Repo size | Domains expected | Concurrency | Adaptation |
+|---|---|---|---|
+| <10K LOC, SPA or single service | 1 | All caps collapse to 1 | Phase 00 scanners run once over the whole tree (skip per-module fan-out). Phase 01 produces one domain entry. Phases 02–07 invoke sds once. |
+| 10K–100K LOC, few services | 1–3 | Caps as written; usually serial | Per-module scanners apply if `LEGACY_PATH` has 4+ top-level source directories. |
+| 100K–1M LOC | 3–8 | Full caps | Standard path. |
+| 1M+ LOC | 5–15 | Full caps, sub-domain split | If a domain exceeds the size where one `/sds.spec` session is unwieldy (in practice, when its spec would have >20 FRs), split it into features via a per-feature briefing and run `/sds.spec` per feature. |
+
+The "Minimum N domains" gate is removed. **A single-domain migration is valid.** The decompose phase declares the inventory it finds; the orchestrator does not invent additional domains to hit a minimum.
+
+For repos with a single obvious domain (a CRUD SPA, a CLI, a single-purpose service), Phase 01 produces `domains/_index.md` with one row and skips `_shared-kernel.md` (no cross-domain sharing) and `_migration-order.md` (only one domain to migrate). `_contracts.yaml` is still written when the domain exposes an inbound API.
+
+---
+
 ## Artifact Paths
 
-The migration produces artifacts in three locations. Do not blur them.
+The migration produces artifacts in three trees. Do not blur them.
 
-| Location | Owner | Contents |
+| Location (relative to workspace root) | Owner | Contents |
 |---|---|---|
-| `migration-state.json` (repo root) | this skill | Cross-domain state, parameters, phase progress |
-| `migration/` (repo root) | this skill | Discovery summary, decompose outputs, per-domain `legacy-context.md`, strangler configs, api-diff reports, decommission logs |
-| `spec-driven/<domain-slug>/` | the sds.* skills | spec.md, design.md, tasks.md, bundle-N.md, progress-bundle-N.md, verify-report.md |
+| `migration-state.json` | this skill | Cross-domain state, parameters, phase progress |
+| `discovery/` | this skill | Phase 00 outputs (`SUMMARY.md`, scan results, dependency graph) |
+| `domains/` | this skill | Phase 01 outputs (`_index.md`, `_contracts.yaml`, `_codeowners.md`, `_migration-order.md`, and `_shared-kernel.md` when >1 domain) plus per-domain `<slug>/charter.md`, `<slug>/legacy-context.md`, `<slug>/strangler/*`, `<slug>/api-diff-report.md`, `<slug>/verify-supplement.md` |
+| `_constraints.md` | this skill | Cross-domain constraints written once at the start of Phase 03 |
+| `state/` | this skill | Scheduler outputs (`next-actions.md`, `scheduler.log`) |
+| `spec-driven/<slug>/` | the sds.* skills | `spec.md`, `design.md`, `tasks.md`, `bundle-N.md`, `progress-bundle-N.md`, `verify-report.md` |
 
 The migration domain slug **is** the sds spec slug. Domains must be named with the slug format the sds skills accept: lowercase-with-hyphens, ≤64 chars, `[a-z0-9-]+`.
+
+The workspace root is whatever directory the user invokes `/migration-v2` from. The skill writes nothing outside the six paths above plus `spec-driven/`.
 
 ---
 
 ## Concurrency Model
 
-| Phase | Max parallel agents | Notes |
+| Phase | Cap on concurrent domain instances | Notes |
 |-------|---------------------|-------|
-| 00 Discovery | 8 | Native scanners (read-only). |
-| 01 Decompose | 1 | Serial reasoning over discovery output. |
-| 02 Spec | 1 per domain, up to 4 concurrent | `/sds.spec` is interactive — parallel runs require separate sessions. |
-| 03 Design | 1 per domain, up to 4 concurrent | Same as Spec. |
-| 04 Tasks | up to N domains | `/sds.task` is shorter and tolerates more parallelism. |
-| 05 Execute | 1 per domain across domains; within a domain, `/sds.execute --parallelism` controls bundle parallelism | Branch isolation is owned by sds.execute. |
-| 06 Strangler-fig | N domains | Config generation independent. |
-| 07 Verify | up to N domains | `/sds.verify` itself dispatches 6 parallel verification agents internally. |
-| 08 API-diff | N domains | Native harness. |
+| 00 Discovery | 8 module-scanners (not domains) | Native scanners (read-only). |
+| 01 Decompose | 1 (serial sub-agents) | Serial reasoning over discovery output. |
+| 02 Spec | 4 | `/sds.spec` is interactive — parallel runs require separate sessions. |
+| 03 Design | 4 | Same as Spec. |
+| 04 Tasks | 8 | `/sds.task` is shorter and tolerates more parallelism. |
+| 05 Execute | 4 across domains; within a domain, `/sds.execute --parallelism` controls bundle parallelism | Branch isolation is owned by sds.execute. |
+| 06 Strangler-fig | 8 | Config generation independent. |
+| 07 Verify | 4 | Each `/sds.verify` already spawns 6 internal agents; further parallelism risks token blowup. |
+| 08 API-diff | 8 | Native harness. |
 | 09 Decommission | 1, serial across domains | Safety: never decommission two domains at once. |
 
 Phases marked "interactive" (02, 03) require human input via the sds gates. The scheduler must surface the gate to the user, not auto-answer.
@@ -102,24 +124,26 @@ Once per project:
 - [sub-agents/00-discovery/dependency-graph.md](sub-agents/00-discovery/dependency-graph.md)
 
 After all complete:
-- [sub-agents/00-discovery/discovery-synthesis.md](sub-agents/00-discovery/discovery-synthesis.md) (writes `migration/discovery/SUMMARY.md`).
+- [sub-agents/00-discovery/discovery-synthesis.md](sub-agents/00-discovery/discovery-synthesis.md) (writes `discovery/SUMMARY.md`).
 
-**Gate**: `migration/discovery/SUMMARY.md` exists AND `migration-state.json.phases_complete` contains `"discovery"`.
+**Gate**: `discovery/SUMMARY.md` exists AND `migration-state.json.phases_complete` contains `"discovery"`.
 
 ---
 
 ## Phase 01 — Decompose (native)
 
 Dispatch serially:
-1. [sub-agents/01-decompose/domain-decompose.md](sub-agents/01-decompose/domain-decompose.md) → writes `migration/domains/_index.md`. Each domain's `slug` MUST be in `[a-z0-9-]+` (sds-compatible).
-2. [sub-agents/01-decompose/shared-kernel-inventory.md](sub-agents/01-decompose/shared-kernel-inventory.md) → `migration/domains/_shared-kernel.md`.
-3. [sub-agents/01-decompose/contract-registry.md](sub-agents/01-decompose/contract-registry.md) → `migration/domains/_contracts.yaml`.
-4. [sub-agents/01-decompose/team-ownership-map.md](sub-agents/01-decompose/team-ownership-map.md) → `migration/domains/_codeowners.md`.
-5. [sub-agents/01-decompose/migration-order.md](sub-agents/01-decompose/migration-order.md) → `migration/domains/_migration-order.md`.
+1. [sub-agents/01-decompose/domain-decompose.md](sub-agents/01-decompose/domain-decompose.md) → writes `domains/_index.md`. Each domain's `slug` MUST be in `[a-z0-9-]+` (sds-compatible).
+2. [sub-agents/01-decompose/shared-kernel-inventory.md](sub-agents/01-decompose/shared-kernel-inventory.md) → `domains/_shared-kernel.md`.
+3. [sub-agents/01-decompose/contract-registry.md](sub-agents/01-decompose/contract-registry.md) → `domains/_contracts.yaml`.
+4. [sub-agents/01-decompose/team-ownership-map.md](sub-agents/01-decompose/team-ownership-map.md) → `domains/_codeowners.md`.
+5. [sub-agents/01-decompose/migration-order.md](sub-agents/01-decompose/migration-order.md) → `domains/_migration-order.md`.
 
-After completion, for each domain create `migration/domains/<slug>/legacy-context.md` from the template at [templates/legacy-context.md](templates/legacy-context.md). This briefing file is the `--from` input for `/sds.spec` in Phase 02.
+After completion, for each domain create `domains/<slug>/legacy-context.md` from the template at [templates/legacy-context.md](templates/legacy-context.md). This briefing file is the `--from` input for `/sds.spec` in Phase 02.
 
-**Gate**: All five `_*` files exist; per-domain `legacy-context.md` exists for every domain. State has `"decompose"` complete. **Domain expert review required** before Phase 02.
+**Single-domain branch**: when `domain-decompose.md` produces exactly one domain, steps 2 and 5 collapse: skip `_shared-kernel.md` (no cross-domain sharing exists) and write `_migration-order.md` as a single-line file containing the one slug. Steps 3 and 4 still run.
+
+**Gate**: `domains/_index.md`, `domains/_contracts.yaml`, `domains/_codeowners.md`, `domains/_migration-order.md` exist. `domains/_shared-kernel.md` exists when domain count >1. Per-domain `domains/<slug>/charter.md` and `domains/<slug>/legacy-context.md` exist for every domain. State has `"decompose"` complete. **Domain expert review required** before Phase 02.
 
 ---
 
@@ -128,7 +152,7 @@ After completion, for each domain create `migration/domains/<slug>/legacy-contex
 For each domain slug (parallel, cap=4):
 
 ```
-/sds.spec <slug> --from migration/domains/<slug>/legacy-context.md --draft
+/sds.spec <slug> --from domains/<slug>/legacy-context.md --draft
 ```
 
 `--draft` is mandatory: it synthesizes a spec from the legacy briefing and presents it for user validation, rather than running full interactive elicitation from scratch. The user reviews and refines.
@@ -146,20 +170,20 @@ Full delegation details (briefing format, --draft fallback, multi-project handli
 For each domain slug whose spec is final (parallel, cap=4):
 
 ```
-/sds.design <slug> --context migration/_constraints.md
+/sds.design <slug> --context _constraints.md
 ```
 
-`migration/_constraints.md` is written once per migration; it lists the `TECH_STACK`, `COMPLIANCE_SCOPE`, NFR baselines, and any architectural standards that apply across domains. Each `/sds.design` run reads it as additional context to its base research.
+`_constraints.md` is written once per migration; it lists the `TECH_STACK`, `COMPLIANCE_SCOPE`, NFR baselines, and any architectural standards that apply across domains. Each `/sds.design` run reads it as additional context to its base research.
 
 **Gate per domain**: `spec-driven/<slug>/design.md` exists with `status: final`. Update domain status to `"design"`. **API owner review required** if domain exposes inbound contracts.
 
-Full delegation details, including how to inject contract requirements from `migration/domains/_contracts.yaml`: [references/sds-delegation.md](references/sds-delegation.md#phase-03).
+Full delegation details, including how to inject contract requirements from `domains/_contracts.yaml`: [references/sds-delegation.md](references/sds-delegation.md#phase-03).
 
 ---
 
 ## Phase 04 — Tasks (delegate to /sds.task)
 
-For each domain slug whose design is final (parallel, cap = N):
+For each domain slug whose design is final (parallel, cap=8):
 
 ```
 /sds.task <slug>
@@ -175,7 +199,7 @@ Full delegation details: [references/sds-delegation.md](references/sds-delegatio
 
 ## Phase 05 — Execute (delegate to /sds.execute)
 
-For each domain slug, respecting the order in `migration/domains/_migration-order.md`:
+For each domain slug, respecting the order in `domains/_migration-order.md` (cap=4 concurrent domain instances):
 
 ```
 /sds.execute <slug> --parallelism <N>
@@ -195,11 +219,11 @@ Full delegation details: [references/sds-delegation.md](references/sds-delegatio
 
 ## Phase 06 — Strangler-Fig (native; skipped when `LIVE_TRAFFIC=false`)
 
-For each domain (parallel):
-1. [sub-agents/06-strangler-fig/routing-config.md](sub-agents/06-strangler-fig/routing-config.md) — uses `ROUTING_LAYER`. Writes `migration/domains/<slug>/strangler/routing.{conf|tf|js}`.
-2. [sub-agents/06-strangler-fig/feature-flag-wiring.md](sub-agents/06-strangler-fig/feature-flag-wiring.md) — uses `FEATURE_FLAG_SYS`. Writes `migration/domains/<slug>/strangler/flags.yaml`.
-3. [sub-agents/06-strangler-fig/fallback-logic.md](sub-agents/06-strangler-fig/fallback-logic.md) — writes `migration/domains/<slug>/strangler/fallback.md`.
-4. [sub-agents/06-strangler-fig/canary-rollout.md](sub-agents/06-strangler-fig/canary-rollout.md) — writes `migration/domains/<slug>/strangler/canary-schedule.yaml`.
+For each domain (parallel, cap=8):
+1. [sub-agents/06-strangler-fig/routing-config.md](sub-agents/06-strangler-fig/routing-config.md) — uses `ROUTING_LAYER`. Writes `domains/<slug>/strangler/routing.{conf|tf|js}`.
+2. [sub-agents/06-strangler-fig/feature-flag-wiring.md](sub-agents/06-strangler-fig/feature-flag-wiring.md) — uses `FEATURE_FLAG_SYS`. Writes `domains/<slug>/strangler/flags.yaml`.
+3. [sub-agents/06-strangler-fig/fallback-logic.md](sub-agents/06-strangler-fig/fallback-logic.md) — writes `domains/<slug>/strangler/fallback.md`.
+4. [sub-agents/06-strangler-fig/canary-rollout.md](sub-agents/06-strangler-fig/canary-rollout.md) — writes `domains/<slug>/strangler/canary-schedule.yaml`.
 
 **Gate per domain**: all four files exist. **SRE review required** before any canary ramp begins. Update domain status to `"strangler"`.
 
@@ -207,7 +231,7 @@ For each domain (parallel):
 
 ## Phase 07 — Verify (delegate to /sds.verify)
 
-For each domain (parallel, up to N):
+For each domain (parallel, cap=4):
 
 ```
 /sds.verify <slug>
@@ -230,9 +254,9 @@ The four remaining migration dimensions — performance, observability, complian
 - [sub-agents/07-verify/compliance.md](sub-agents/07-verify/compliance.md)
 - [sub-agents/07-verify/data-parity.md](sub-agents/07-verify/data-parity.md)
 
-Aggregate findings into `migration/domains/<slug>/verify-supplement.md`. The canonical verify artifact is `spec-driven/<slug>/verify-report.md`; the supplement covers only the four extra dimensions.
+Aggregate findings into `domains/<slug>/verify-supplement.md`. The canonical verify artifact is `spec-driven/<slug>/verify-report.md`; the supplement covers only the four extra dimensions.
 
-**Gate per domain**: zero CRITICAL findings open across `spec-driven/<slug>/verify-report.md` AND `migration/domains/<slug>/verify-supplement.md`. Update domain status to `"verify"`.
+**Gate per domain**: zero CRITICAL findings open across `spec-driven/<slug>/verify-report.md` AND `domains/<slug>/verify-supplement.md`. Update domain status to `"verify"`.
 
 Full delegation details: [references/sds-delegation.md](references/sds-delegation.md#phase-07).
 
@@ -240,12 +264,12 @@ Full delegation details: [references/sds-delegation.md](references/sds-delegatio
 
 ## Phase 08 — API-Diff (native; skipped when `LIVE_TRAFFIC=false`)
 
-For each domain whose design names inbound contracts (parallel):
+For each domain whose design names inbound contracts (parallel, cap=8):
 1. [sub-agents/08-api-diff/harness-setup.md](sub-agents/08-api-diff/harness-setup.md) — installs harness from [templates/api-diff-harness.ts](templates/api-diff-harness.ts).
 2. [sub-agents/08-api-diff/semantic-equivalence.md](sub-agents/08-api-diff/semantic-equivalence.md) — defines tolerated diffs.
 3. [sub-agents/08-api-diff/diff-runner.md](sub-agents/08-api-diff/diff-runner.md) — runs continuously at every canary ramp step.
 
-**Gate per domain**: `migration/domains/<slug>/api-diff-report.md` shows <0.1% unexplained diffs at current ramp. Update domain status to `"api-diff"`.
+**Gate per domain**: `domains/<slug>/api-diff-report.md` shows <0.1% unexplained diffs at current ramp. Update domain status to `"api-diff"`.
 
 ---
 
@@ -281,7 +305,7 @@ Schema: [coordinator/migration-state.schema.json](coordinator/migration-state.sc
 Between phases, and on resume, invoke [coordinator/scheduler.md](coordinator/scheduler.md). The scheduler:
 1. Reads `migration-state.json`.
 2. Determines the next dispatchable phase per domain, respecting `_migration-order.md` and the concurrency caps above.
-3. Writes `migration/state/next-actions.md`.
+3. Writes `state/next-actions.md`.
 
 The orchestrator dispatches the listed actions. For sds-delegated phases, the action is a `/sds.<phase> <slug>` invocation, not a sub-agent path.
 
@@ -309,7 +333,7 @@ These gates require human review before the next phase begins. Surface decisions
 - State file conflict (concurrent write): the scheduler serializes; never edit state mid-flight.
 - sds skill stops with an error: surface verbatim to the user; do not retry blindly. Many sds errors are user-action required (missing spec, missing slug, accessibility failure).
 - Phase 07 CRITICAL finding: block phase; do not advance ramp; surface to user with the relevant report path.
-- Canary SLO breach: trigger automatic rollback per `migration/domains/<slug>/strangler/canary-schedule.yaml`. Mark `domains[<slug>].status = "rolled_back"` and append to `rollback_history` with `triggered_by = "slo_breach"`.
+- Canary SLO breach: trigger automatic rollback per `domains/<slug>/strangler/canary-schedule.yaml`. Mark `domains[<slug>].status = "rolled_back"` and append to `rollback_history` with `triggered_by = "slo_breach"`.
 
 ---
 

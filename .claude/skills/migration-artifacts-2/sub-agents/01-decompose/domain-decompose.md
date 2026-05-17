@@ -1,6 +1,6 @@
 # Sub-Agent: Domain Decompose
 
-You read `discovery/SUMMARY.md` and `discovery/dependency-graph.json`, then split the legacy app into 5–15 bounded domains (DDD-style).
+You read `discovery/SUMMARY.md` and `discovery/dependency-graph.json`, then declare the legacy app's domain inventory. The inventory may have anywhere from 1 to ~15 domains. Declare what you find — do not invent additional domains to hit a minimum.
 
 ---
 
@@ -46,9 +46,11 @@ Signals to merge:
 - Tightly coupled in dep graph (high edge weight + bidirectional).
 
 Caps:
-- Minimum 3 domains (for large-app path).
-- Maximum 15. If you find more, merge related ones; flag in notes.
-- Auth is almost always its own domain.
+- Minimum 1 domain. Single-domain inventories are valid for SPAs, CLIs, and single-purpose services.
+- Maximum ~15. If you find more, merge related ones; flag in notes.
+- When auth exists as a distinct concern with its own data and routes, declare it as its own domain. When auth is tightly fused with a single business surface (e.g. a tiny SPA that wraps Firebase Auth + one feature), it stays inside that domain.
+
+Slug requirement: every domain's name MUST also serve as its sds spec slug. Match `[a-z0-9-]+`, ≤64 chars. Record under `migration-state.json.domains[].spec_slug`.
 
 ---
 
@@ -67,10 +69,15 @@ Caps:
 | ... |
 
 ## Notes
-- Shared-kernel candidates: see `_shared-kernel.md` (next agent).
-- Domains exceeding 200K LOC must use feature-spec.md: {list}.
+- Shared-kernel candidates: see `_shared-kernel.md` (next agent — skip if single-domain).
+- Domains where `/sds.spec` would carry >20 FRs: {list} — recommend per-feature briefings.
 - Cycles in dep graph that block clean decomposition: {list, references}.
 ```
+
+When the inventory has exactly one domain, the next agents in Phase 01 collapse:
+- `shared-kernel-inventory.md` — skip (no cross-domain sharing).
+- `_migration-order.md` — write a single-line file with the one slug.
+- `contract-registry.md` and `team-ownership-map.md` — still run; produce single-row outputs.
 
 ## Output: `domains/{{DOMAIN}}/charter.md`
 
@@ -101,7 +108,7 @@ Append each domain to `migration-state.json.domains[]`:
 }
 ```
 
-If `loc > 200000`, set `feature_split: true` and add comment "requires feature-spec.md decomp".
+If the domain's spec would carry >20 FRs (rule of thumb: `loc > 200000` or >5 large sub-areas), set `feature_split: true` so the orchestrator routes Phase 02 through per-feature `/sds.spec` invocations instead of a single one.
 
 Append `"decompose"` to `phases_complete` only after ALL domain charters are written.
 
@@ -111,10 +118,11 @@ Append `"decompose"` to `phases_complete` only after ALL domain charters are wri
 
 ```
 [DOMAIN-DECOMPOSE COMPLETE]
-Domains: {comma-separated list}
-Feature-split required: {list of domains > 200K LOC}
-Files: domains/_index.md, domains/{DOMAIN}/charter.md (×{N})
+Domains: {comma-separated list of slugs}
+Feature-split required: {list of slugs flagged as feature_split}
+Files: domains/_index.md, domains/{SLUG}/charter.md (×{N})
 
-NEXT: shared-kernel-inventory.md, contract-registry.md, team-ownership-map.md, migration-order.md
+NEXT (multi-domain): shared-kernel-inventory.md, contract-registry.md, team-ownership-map.md, migration-order.md
+NEXT (single-domain): contract-registry.md, team-ownership-map.md, single-row migration-order.md
 HUMAN GATE: domain expert reviews domains/_index.md and each charter before Phase 02.
 ```

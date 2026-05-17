@@ -10,7 +10,7 @@ The migration skill is the orchestrator. The sds skills are the engine. The migr
 
 **Slug identity.** A migration domain's slug **is** its sds spec slug. The slug must match `[a-z0-9-]+` and be ≤64 chars. The slug is the only join key between `migration-state.json.domains[<slug>]` and `spec-driven/<slug>/`.
 
-**Working directory.** All sds skills are invoked from the repository root. They write under `spec-driven/<slug>/`. The migration skill writes under `migration/` and `migration-state.json` at the repo root.
+**Working directory.** All sds skills are invoked from the workspace root. They write under `spec-driven/<slug>/`. The migration skill writes under `discovery/`, `domains/`, `_constraints.md`, and `migration-state.json` — all at the workspace root.
 
 **State reflection.** The sds skills never read or update `migration-state.json`. After a sds invocation returns, the migration scheduler reads the sds output (file existence + frontmatter `status`) and reflects progress into the state file. Update `last_updated` and `domains[<slug>].status` on every reflection.
 
@@ -27,14 +27,14 @@ The migration skill is the orchestrator. The sds skills are the engine. The migr
 For each domain whose status is `pending` and whose `legacy-context.md` exists:
 
 ```
-/sds.spec <slug> --from migration/domains/<slug>/legacy-context.md --draft
+/sds.spec <slug> --from domains/<slug>/legacy-context.md --draft
 ```
 
 `--draft` is required. It tells `/sds.spec` to synthesize a spec from the briefing and present it for user validation rather than running full interactive elicitation. The briefing is the migration's substitute for the user's tacit knowledge — without it, `/sds.spec` would ask the user everything from scratch.
 
 ### Briefing (`legacy-context.md`)
 
-One file per domain at `migration/domains/<slug>/legacy-context.md`, written at the end of Phase 01 from [../templates/legacy-context.md](../templates/legacy-context.md). It carries:
+One file per domain at `domains/<slug>/legacy-context.md`, written at the end of Phase 01 from [../templates/legacy-context.md](../templates/legacy-context.md). It carries:
 
 - Domain name and slug
 - Source paths in the legacy app (files, directories)
@@ -73,18 +73,12 @@ When the legacy app spans multiple repositories, the migration's `legacy-context
 For each domain whose status is `"spec"`:
 
 ```
-/sds.design <slug> --context migration/_constraints.md
+/sds.design <slug> --context _constraints.md
 ```
 
-If the domain exposes inbound contracts (per `migration/domains/_contracts.yaml`), additionally append a contract-context file:
+`/sds.design` accepts only one `--context` path. When the domain exposes inbound contracts (per `domains/_contracts.yaml`), the migration scheduler MUST merge the contract excerpts for this domain into `_constraints.md` before invoking — or surface the relevant contract excerpts to the user as part of the Research Scope Review gate response. Do not invoke `/sds.design` twice with different contexts.
 
-```
-/sds.design <slug> --context migration/_constraints.md
-```
-
-…then immediately after the Research Scope Review gate, paste the contract excerpt into the user's response so the design accounts for the inbound interface obligations. (`/sds.design` accepts only one `--context` path; the migration scheduler must merge constraints + contracts into `migration/_constraints.md` itself, or surface the contract excerpts as part of the gate response.)
-
-### Constraints file (`migration/_constraints.md`)
+### Constraints file (`_constraints.md`)
 
 Written once at the start of Phase 03 if not already present. Sections:
 
@@ -92,7 +86,7 @@ Written once at the start of Phase 03 if not already present. Sections:
 - **Compliance scope** — verbatim from `COMPLIANCE_SCOPE`.
 - **NFR baselines** — performance, availability, RTO/RPO targets that apply across all domains.
 - **Architectural standards** — repo layout convention, lint/format tooling, test framework choices, error model.
-- **Inter-domain contracts** — reference to `migration/domains/_contracts.yaml` with summary of which contracts this domain consumes or owns.
+- **Inter-domain contracts** — reference to `domains/_contracts.yaml` with summary of which contracts this domain consumes or owns.
 
 ### Gate
 
@@ -155,7 +149,7 @@ Reflect: `domains[<slug>].status = "tasks"`.
 
 ### Invocation
 
-For each domain whose status is `"tasks"`, respecting `migration/domains/_migration-order.md`:
+For each domain whose status is `"tasks"`, respecting `domains/_migration-order.md`:
 
 ```
 /sds.execute <slug> --parallelism <N>
@@ -227,14 +221,14 @@ Default runs all six built-in dimensions. To narrow:
 - Compliance: [../sub-agents/07-verify/compliance.md](../sub-agents/07-verify/compliance.md) (mandatory when `COMPLIANCE_SCOPE` is non-`none`)
 - Data-parity: [../sub-agents/07-verify/data-parity.md](../sub-agents/07-verify/data-parity.md) (mandatory when the migration includes a data move)
 
-Aggregate the four supplemental dimensions into a single file `migration/domains/<slug>/verify-supplement.md`. Use the same severity vocabulary as the sds verify report: `critical | high | medium | low | info`.
+Aggregate the four supplemental dimensions into a single file `domains/<slug>/verify-supplement.md`. Use the same severity vocabulary as the sds verify report: `critical | high | medium | low | info`.
 
 ### Gate
 
 Zero CRITICAL findings across:
 
 - `spec-driven/<slug>/verify-report.md`
-- `migration/domains/<slug>/verify-supplement.md`
+- `domains/<slug>/verify-supplement.md`
 
 Reflect: `domains[<slug>].status = "verify"`.
 
@@ -248,7 +242,7 @@ When `/sds.verify` produces a remediation brief (`spec-driven/<slug>/remediation
 
 When `migration-state.json.parameters.LIVE_TRAFFIC = false`:
 
-- Phase 06 (strangler-fig) is skipped. No `migration/domains/<slug>/strangler/` directory is created.
+- Phase 06 (strangler-fig) is skipped. No `domains/<slug>/strangler/` directory is created.
 - Phase 08 (api-diff) is skipped.
 - Phase 09 (decommission) is skipped. The run completes after Phase 07.
 - Mark these phases as `skipped` in `migration-state.json.phases_complete` with a `_skip_reason` sidecar field per phase.

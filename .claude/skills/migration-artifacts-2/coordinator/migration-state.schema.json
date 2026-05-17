@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://migration-artifacts-2/migration-state.schema.json",
   "title": "Migration State",
-  "description": "Canonical state file for a large-app SDS migration. Read at the start of every sub-agent. Updated atomically via read → modify → write-tmp → rename.",
+  "description": "Canonical state file for an SDS migration. Applies to any repo size — single-domain SPAs through multi-million-LOC monoliths. Read at the start of every sub-agent. Updated atomically via read → modify → write-tmp → rename.",
   "type": "object",
   "required": ["version", "parameters", "phases_complete", "domains"],
   "properties": {

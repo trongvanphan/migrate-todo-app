@@ -1,6 +1,6 @@
-# Migration Workflow Runbook (v2 — Large App)
+# Migration Workflow Runbook (v2)
 
-Runbook for migrations of 100K–5M+ LOC legacy applications. Pair with `SKILL.md` (machine instructions) and `coordinator/scheduler.md` (dispatch logic).
+Runbook for migrations of any size — single-domain SPA through multi-million-LOC monolith. Pair with `SKILL.md` (machine instructions), `references/sds-delegation.md` (per-phase sds invocations), and `coordinator/scheduler.md` (dispatch logic).
 
 ---
 
@@ -20,12 +20,13 @@ Runbook for migrations of 100K–5M+ LOC legacy applications. Pair with `SKILL.m
 
 | LOC | Domains | Phases to run | Recommended duration | Team size |
 |-----|---------|---------------|----------------------|-----------|
-| <100K | 1–3 | Use **v1** (small app path) | 1–4 weeks | 1–3 |
-| 100K–1M | 3–8 | v2 light: 00, 01, 02, 03, 04, 05, 07 (skip 06 strangler, 08 diff, 09 decomm if no live traffic) | 3–6 months | 3–10 |
-| 1M–5M | 5–15 | **v2 full: all 10 phases** | 12–24 months | 10–40 |
-| >5M | 10+ | v2 full + **sub-domain decomp** (run `feature-spec.md` per feature within each large domain) | 24–36 months | 40+ |
+| <10K | 1 | All sds-delegated phases (02–05, 07). Discovery collapses to one pass. Skip 06/08/09 when `LIVE_TRAFFIC=false`. | hours – 1 week | 1 |
+| 10K–100K | 1–3 | sds-delegated phases per domain. Per-module discovery only when 4+ top-level source dirs. Skip 06/08/09 unless live traffic. | 1–8 weeks | 1–3 |
+| 100K–1M | 3–8 | Full pipeline (06/08/09 if live traffic). | 3–6 months | 3–10 |
+| 1M–5M | 5–15 | Full pipeline. | 12–24 months | 10–40 |
+| >5M | 10+ | Full pipeline + sub-domain split: for domains where one `/sds.spec` session would carry >20 FRs, write a per-feature briefing and invoke `/sds.spec` per feature. | 24–36 months | 40+ |
 
-**Decision rule**: if you cannot mentally hold the entire app structure in 30 minutes, use v2.
+**Decision rule**: same pipeline regardless of size. The cells above describe what fans out and how long it takes, not whether to invoke the skill.
 
 ---
 

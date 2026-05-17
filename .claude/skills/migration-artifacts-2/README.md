@@ -1,8 +1,10 @@
-# Migration Artifacts v2 — Large-App Edition
+# Migration Artifacts v2
 
-Toolkit for migrating **large legacy applications (100K–5M+ LOC)** to a modern stack using a parallelized, state-driven, strangler-fig variant of the SDS methodology.
+Toolkit for migrating a legacy application of **any size** — a single-page app or a multi-million-LOC monolith — to a new stack using a state-driven, sds-delegating, strangler-fig variant of the SDS methodology.
 
-v2 exists because v1 silently breaks at scale. See [`CHANGELOG-vs-v1.md`](./CHANGELOG-vs-v1.md) for the 20 capabilities v1 cannot deliver.
+The pipeline runs the same phases at every scale; only fan-out and concurrency change. Per-domain Spec, Design, Tasks, Execute, and Verify work is delegated to the `sds.*` skill suite. This skill owns Discovery, Decompose, Strangler-Fig, API-Diff, Decommission, and the cross-domain state file.
+
+v2 exists because v1 silently breaks at scale. See [`CHANGELOG-vs-v1.md`](./CHANGELOG-vs-v1.md) for the differences and the sds-delegation update.
 
 ---
 
@@ -30,17 +32,19 @@ v2 exists because v1 silently breaks at scale. See [`CHANGELOG-vs-v1.md`](./CHAN
 
 ---
 
-## When to use v1 vs v2
+## Scale guidance
 
-| LOC of legacy app | Domains expected | Recommendation |
-|-------------------|------------------|----------------|
-| under 5K          | 1                | v1 small-app path |
-| 5K – 100K         | 1–3              | v1 large-app path |
-| 100K – 1M         | 3–8              | **v2 light** (skip 06/08/09 phases) |
-| 1M – 5M           | 5–15             | **v2 full** (all 10 phases) |
-| over 5M           | 10+              | **v2 full + sub-domain decomp** (run `feature-spec.md` per feature within each domain) |
+v2 is the entry point for any migration. The phases that run are the same; only what each phase fans out to changes.
 
-If unsure: pick v2. v2 contains v1 as a subset — every v1 phase has a v2 counterpart with the same outputs plus state-file updates.
+| LOC of legacy app | Domains expected | Live traffic? | What runs |
+|---|---|---|---|
+| under 10K | 1 | usually no | All sds-delegated phases (02–05, 07). Discovery scanners collapse to one pass. Phases 06, 08, 09 skipped when `LIVE_TRAFFIC=false`. |
+| 10K – 100K | 1–3 | varies | sds-delegated phases per domain. Per-module discovery if 4+ top-level source dirs. Phases 06/08/09 only when live traffic is being shifted. |
+| 100K – 1M | 3–8 | usually yes | Full pipeline. Concurrency caps apply. |
+| 1M – 5M | 5–15 | yes | Full pipeline. Phase 01 may produce a long migration order. |
+| over 5M | 10+ | yes | Full pipeline + sub-domain split: for domains where one `/sds.spec` session would carry >20 FRs, write a per-feature briefing and invoke `/sds.spec` per feature. |
+
+There is no minimum domain count. A single-domain run is valid.
 
 ---
 

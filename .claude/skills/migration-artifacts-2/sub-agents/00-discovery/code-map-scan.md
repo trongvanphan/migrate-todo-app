@@ -8,7 +8,7 @@ Do not scan more than one module. Do not write application code.
 
 ## Parameters
 
-- `{{LEGACY_PATH}}` — absolute path to legacy monolith root
+- `{{LEGACY_PATH}}` — absolute path to legacy application root (monolith, multi-package repo, or single-package app)
 - `{{MODULE}}` — relative subdirectory (e.g., `src/billing`, `lib/orders`, `apps/web`)
 
 ---
