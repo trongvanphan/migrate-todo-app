@@ -1,0 +1,15 @@
+{
+  "slug": "todo-app-migration-fastapi-nextjs",
+  "backend": "markdown",
+  "userBranch": "main",
+  "execBranch": "spec-driven/todo-app-migration-fastapi-nextjs/exec",
+  "artifactHome": "/Users/trongpv6/Documents/GitHub/migrate-todo-app",
+  "currentBundle": null,
+  "teamGroup": null,
+  "mergeStrategyRepeat": null,
+  "baselines": {
+    "default": { "hash": "227591b54d77c3f3132afe7ee280054c1cd8da99", "exitCode": null }
+  },
+  "phasesCompleted": [],
+  "lastUpdated": "2026-05-17T00:00:00Z"
+}
