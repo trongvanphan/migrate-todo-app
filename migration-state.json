@@ -1,0 +1,75 @@
+{
+  "version": "2.0",
+  "created_at": "2026-05-17T00:00:00Z",
+  "last_updated": "2026-05-17T00:00:00Z",
+  "parameters": {
+    "LEGACY_PATH": "/Users/trongpv6/Documents/GitHub/migrate-todo-app/todo-angular-firebase-demo",
+    "OUTPUT_PATH": "/Users/trongpv6/Documents/GitHub/migrate-todo-app/todo-app-migrated",
+    "APP_SIZE_LOC": 1267,
+    "TIMELINE_MONTHS": 1,
+    "TEAM_SIZE": 1,
+    "TECH_STACK": {
+      "backend": {
+        "language": "python",
+        "framework": "fastapi",
+        "db": "sqlite (dev) / postgres (prod)",
+        "orm": "sqlalchemy",
+        "auth": "jwt (python-jose) + bcrypt; optional Firebase ID-token verification"
+      },
+      "frontend": {
+        "language": "typescript",
+        "framework": "next.js (app router)",
+        "ui": "react 18",
+        "http": "fetch + SWR",
+        "auth": "JWT stored in httpOnly cookie via /api proxy"
+      }
+    },
+    "COMPLIANCE_SCOPE": ["none"]
+  },
+  "phases_complete": ["discovery", "decompose", "spec", "design", "tasks", "execute", "verify"],
+  "domains": [
+    {
+      "name": "todo",
+      "status": "done",
+      "loc": 1267,
+      "feature_split": false,
+      "features": ["auth", "tasks"],
+      "dependencies": [],
+      "owner_team": "solo",
+      "branch": "demo2-2",
+      "last_updated": "2026-05-17T00:00:00Z",
+      "blockers": []
+    }
+  ],
+  "shared_kernel": [],
+  "contracts": [
+    {
+      "name": "todo-api",
+      "version": "1.0.0",
+      "kind": "rest",
+      "owner_domain": "todo",
+      "consumers": ["frontend"],
+      "schema_path": "todo-app-migrated/backend/app/main.py",
+      "deprecation_date": null
+    }
+  ],
+  "risks": [
+    {
+      "id": "R1",
+      "severity": "medium",
+      "description": "Source uses Firebase Realtime DB directly from client; migration changes data store to relational. Existing user data not migrated (demo app, no real users).",
+      "domain": "todo",
+      "mitigation": "Document as a clean rewrite; no data migration needed.",
+      "status": "accepted"
+    },
+    {
+      "id": "R2",
+      "severity": "low",
+      "description": "Social sign-in (Google/GitHub/Twitter/Facebook) replaced with email+password JWT for v1; OAuth can be added later.",
+      "domain": "todo",
+      "mitigation": "Out of scope; documented in spec.",
+      "status": "accepted"
+    }
+  ],
+  "rollback_history": []
+}

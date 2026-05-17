@@ -1,5 +1,5 @@
 ---
-name: migration-v2
+name: migration-artifacts-2
 description: Large-app (100K–5M+ LOC) SDS migration orchestration. 10-phase pipeline with persistent state, parallel multi-domain execution, sub-domain decomposition, strangler-fig automation, API diff harness, canary rollout, decommission. Invoke with /migration-v2.
 ---
 
