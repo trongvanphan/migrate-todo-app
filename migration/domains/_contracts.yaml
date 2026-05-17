@@ -1,0 +1,25 @@
+contracts:
+  - name: tasks-rest
+    version: v1
+    kind: rest
+    owner_domain: tasks
+    consumers: [frontend]
+    schema_path: todo-app-migrated/backend/openapi.json
+    endpoints:
+      - method: GET
+        path: /api/tasks
+        query: [filter]
+      - method: POST
+        path: /api/tasks
+      - method: PATCH
+        path: /api/tasks/{task_id}
+      - method: DELETE
+        path: /api/tasks/{task_id}
+    auth: bearer-firebase-id-token
+  - name: auth-firebase
+    version: v1
+    kind: rpc
+    owner_domain: auth
+    consumers: [frontend, backend]
+    schema_path: (firebase SDK)
+    notes: Frontend uses Firebase JS SDK for sign-in; backend verifies ID tokens via firebase-admin.

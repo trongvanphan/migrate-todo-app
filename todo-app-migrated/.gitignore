@@ -1,6 +1,9 @@
 /backend/.venv
-/backend/app/__pycache__
-/backend/app/routers/__pycache__
+**/__pycache__/
+*.pyc
+backend/*.egg-info/
+backend/.pytest_cache/
+backend/*.db
 
 # backend secrets
 backend/.env

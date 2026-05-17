@@ -1,0 +1,39 @@
+{
+  "version": "2.0",
+  "created_at": "2026-05-17T00:00:00Z",
+  "last_updated": "2026-05-17T00:00:00Z",
+  "parameters": {
+    "LEGACY_PATH": "/Users/trongpv6/Documents/GitHub/migrate-todo-app/todo-angular-firebase-demo",
+    "OUTPUT_PATH": "/Users/trongpv6/Documents/GitHub/migrate-todo-app/todo-app-migrated",
+    "APP_SIZE_LOC": 1267,
+    "TIMELINE_MONTHS": 1,
+    "TEAM_SIZE": 1,
+    "TECH_STACK": {
+      "backend": {
+        "language": "python",
+        "framework": "fastapi",
+        "auth": "firebase-admin",
+        "db": "firebase-realtime-database"
+      },
+      "frontend": {
+        "language": "typescript",
+        "framework": "nextjs",
+        "ui": "react",
+        "auth": "firebase-js-sdk"
+      }
+    },
+    "FEATURE_FLAG_SYS": "custom",
+    "ROUTING_LAYER": "other",
+    "COMPLIANCE_SCOPE": ["none"],
+    "LIVE_TRAFFIC": false
+  },
+  "phases_complete": ["discovery", "decompose", "spec", "design", "tasks", "execute", "verify"],
+  "domains": [
+    {"name": "auth", "spec_slug": "auth", "status": "done", "loc": 250, "dependencies": [], "owner_team": "solo", "owner_engineers": ["trongpv6"]},
+    {"name": "tasks", "spec_slug": "tasks", "status": "done", "loc": 600, "dependencies": ["auth"], "owner_team": "solo", "owner_engineers": ["trongpv6"]}
+  ],
+  "shared_kernel": [],
+  "contracts": [],
+  "risks": [],
+  "rollback_history": []
+}
