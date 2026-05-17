@@ -4,5 +4,6 @@
 
 # backend secrets
 backend/.env
-node_modules
 /frontend/.next
+/frontend/node_modules
+/node_modules
