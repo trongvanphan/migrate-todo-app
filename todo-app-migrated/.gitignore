@@ -1,0 +1,13 @@
+/backend/.venv
+/backend/app/__pycache__
+/backend/app/routers/__pycache__
+
+# backend secrets
+backend/.env
+
+# todo-app-migrated
+node_modules
+dist
+.env
+*.env.local
+.DS_Store
